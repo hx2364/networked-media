@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monday — Brooklyn, IMA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background-color: #f5f0e8;
+      color: #1a1a1a;
+      font-family: Georgia, serif;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      max-width: 36em;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+    .page {
+      display: none;
+    }
+    #start {
+      display: block;
+    }
+    .page:target {
+      display: block;
+    }
+    body:has(#bus-stop:target) #start,
+    body:has(#on-bus:target) #start,
+    body:has(#brooklyn:target) #start,
+    body:has(#ima:target) #start { display: none; }
+    body:has(#bus-stop:target) #bus-stop,
+    body:has(#on-bus:target) #on-bus,
+    body:has(#brooklyn:target) #brooklyn,
+    body:has(#ima:target) #ima { display: block; }
+
+    .page a {
+      color: #2c5282;
+    }
+    .page a:hover {
+      color: #1a365d;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #c4b8a8;
+      margin: 1.5rem 0;
+    }
+    h1 { font-size: 1.4rem; }
+    .muted { color: #5a5a5a; font-size: 0.95rem; }
+    img { max-width: 100%; height: auto; display: block; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+
+  <div id="start" class="page">
+    <p class="muted">Monday.</p>
+    <p>Alarm. The same one. You have to get to Brooklyn.</p>
+    <br/>
+    <p>IMA meets at ten. The only way from here is the school bus.</p>
+    <br/>
+    <hr/>
+    <p><a href="#bus-stop">Leave the house.</a></p>
+  </div>
+
+  <div id="bus-stop" class="page">
+    <p class="muted">The stop.</p>
+    <p>Cold air. Same people, same coats. You wait.</p>
+    <br/>
+    <p>When the yellow pulls up, the doors hiss open. You step in.</p>
+    <br/>
+    <hr/>
+    <p><a href="#on-bus">Get on.</a></p>
+    <p><a href="#start">Go back.</a></p>
+  </div>
+
+  <div id="on-bus" class="page">
+    <p class="muted">Inside.</p>
+    <p>Engine hum. Windows half fogged. Someone’s music through earbuds.</p>
+    <br/>
+    <img src="assets/school_bus.png" alt="A yellow school bus."/>
+    <p>You watch the city pass. Same route every Monday. Same thought: <em>Why do I keep doing this?</em></p>
+    <br/>
+    <hr/>
+    <p><a href="#brooklyn">Get off in Brooklyn.</a></p>
+    <p><a href="#start">Start over.</a></p>
+  </div>
+
+  <div id="brooklyn" class="page">
+    <p class="muted">Brooklyn.</p>
+    <p>You’re here. The building. The stairs. The hallway.</p>
+    <br/>
+    <p>IMA is the one class where you don’t ask why. You just show up.</p>
+    <br/>
+    <hr/>
+    <p><a href="#ima">Walk into the room.</a></p>
+    <p><a href="#start">Start over.</a></p>
+  </div>
+
+  <div id="ima" class="page">
+    <p class="muted">IMA.</p>
+    <p>Screens on. People talking. Someone’s project on the wall.</p>
+    <br/>
+    <p>You sit down. The commute fades. This is the part that sticks: not the bus, not the Monday, but the moment you remember why you’re making things.</p>
+    <br/>
+    <hr/>
+    <p><a href="#start">Another Monday.</a></p>
+  </div>
+
+</body>
+</html>
