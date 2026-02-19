@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day Clock — A slower measure of time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Day Clock</h1>
+      <p class="tagline">One page per day. A slower rhythm.</p>
+    </header>
+
+    <article class="clock-container">
+      <div class="calendar-frame" role="img" aria-label="Calendar page">
+        <div class="measurement-display">
+          <span class="value" id="value">—</span>
+          <span class="label" id="label"></span>
+        </div>
+      </div>
+
+      <nav class="measurement-selector">
+        <p class="selector-label">Measure time as:</p>
+        <div class="measurement-options">
+          <button type="button" data-measurement="day-of-month" class="active">
+            Day of month
+          </button>
+          <button type="button" data-measurement="week-of-year">
+            Week of year
+          </button>
+          <button type="button" data-measurement="days-in-month">
+            Days in month
+          </button>
+          <button type="button" data-measurement="days-since-new-year">
+            Days since Jan 1
+          </button>
+        </div>
+      </nav>
+    </article>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
