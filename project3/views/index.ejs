@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NYU Club Community</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Main booklet container - clickable background -->
+  <main class="booklet" id="booklet">
+    <!-- Center welcome text -->
+    <p class="welcome-text">
+      Behind every club is a story, a memory, or a moment. If you have one to share, add it here for the community.
+    </p>
+
+    <!-- Sticky notes (posts) - draggable and resizable -->
+    <% for (let post of posts) { %>
+      <div class="sticky-note" data-sticky data-post-id="<%= post.id %>"
+        style="left: <%= post.x %>px; top: <%= post.y %>px; width: <%= post.width || 180 %>px; min-height: <%= post.height || 180 %>px;"
+        data-x="<%= post.x %>" data-y="<%= post.y %>" data-width="<%= post.width || 180 %>" data-height="<%= post.height || 180 %>">
+        <span class="tape drag-handle"></span>
+        <span class="resize-handle" title="Drag to resize"></span>
+        <div class="note-content">
+          <% if (post.image) { %>
+            <img src="/uploads/<%= post.image %>" alt="Post image" class="note-thumbnail">
+          <% } %>
+          <h3 class="note-name"><%= post.name %></h3>
+          <span class="note-club"><%= post.club %></span>
+          <p class="note-thoughts"><%= post.thoughts.length > 80 ? post.thoughts.substring(0, 80) + '...' : post.thoughts %></p>
+          <a href="/post/<%= post.id %>" class="view-link">View full story →</a>
+        </div>
+      </div>
+    <% } %>
+  </main>
+
+  <!-- Hidden modal form - styled like a blank sticky note -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-sticky" id="modalForm">
+      <span class="tape"></span>
+      <form method="POST" action="/submit" enctype="multipart/form-data" class="note-form">
+        <input type="hidden" name="x" id="hiddenX" value="">
+        <input type="hidden" name="y" id="hiddenY" value="">
+
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="year">Year</label>
+        <input type="text" id="year" name="year" placeholder="e.g. 2025">
+
+        <label for="club">Club Name</label>
+        <input type="text" id="club" name="club" required>
+
+        <label for="thoughts">Thoughts / Story</label>
+        <textarea id="thoughts" name="thoughts" rows="4" required></textarea>
+
+        <label for="image">Picture (optional)</label>
+        <input type="file" id="image" name="image" accept="image/*">
+
+        <div class="form-buttons">
+          <button type="submit" class="btn-submit">Add to Booklet</button>
+          <button type="button" class="btn-cancel" id="btnCancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/main.js"></script>
+</body>
+</html>

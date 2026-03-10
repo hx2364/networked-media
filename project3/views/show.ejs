@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= post.name %> - NYU Club Community</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="show-page">
+  <article class="post-detail">
+    <span class="tape tape-large"></span>
+    <div class="post-detail-content">
+      <% if (post.image) { %>
+        <img src="/uploads/<%= post.image %>" alt="<%= post.name %>'s photo" class="post-detail-image">
+      <% } %>
+      <h1><%= post.name %></h1>
+      <p class="post-meta"><%= post.year %> · <%= post.club %></p>
+      <div class="post-thoughts"><%= post.thoughts %></div>
+      <a href="/" class="btn-back">← Back to Booklet</a>
+    </div>
+  </article>
+</body>
+</html>
