@@ -1,0 +1,18 @@
+{
+  "name": "project4",
+  "version": "1.0.0",
+  "description": "1. Reading Discussion #6 2. Lecture: Mastodon 3. Tutorial: Mastodon",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "masto": "^7.10.2"
+  }
+}
