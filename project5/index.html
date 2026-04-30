@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive House Notes</title>
+    <style>
+      :root {
+        --panel-bg: rgba(12, 12, 20, 0.88);
+        --text: #f7f4eb;
+        --accent: #ffd08a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Arial, sans-serif;
+        background: #050507;
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+      }
+
+      .scene-wrap {
+        width: 100%;
+        display: grid;
+        place-items: center;
+        perspective: 1400px;
+        gap: 0.65rem;
+      }
+
+      .scene {
+        position: relative;
+        width: min(95vw, var(--img-native-width, 980px));
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transform-style: preserve-3d;
+        transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--scale, 1));
+        transition: transform 220ms ease, box-shadow 220ms ease;
+        animation: idleFloat 6.5s ease-in-out infinite;
+      }
+
+      .scene img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        display: block;
+        user-select: none;
+        pointer-events: none;
+        transform: translateZ(0px) scale(1.01);
+        filter: saturate(1.06) contrast(1.05);
+      }
+
+      .hotspot {
+        position: absolute;
+        width: var(--spot-size, 3.1%);
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(255, 230, 158, 0.95) 0%, rgba(255, 196, 104, 0.5) 40%, rgba(255, 171, 82, 0.05) 72%, rgba(255, 171, 82, 0) 100%);
+        box-shadow: 0 0 10px rgba(255, 204, 107, 0.85), 0 0 26px rgba(255, 173, 66, 0.45);
+        animation: pulse 2s ease-in-out infinite;
+        transform-style: preserve-3d;
+      }
+
+      .hotspot::after {
+        content: "";
+        position: absolute;
+        inset: -8px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 214, 140, 0.45);
+        animation: ring 2.2s ease-out infinite;
+      }
+
+      .hotspot:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+      }
+
+      .window-light {
+        position: absolute;
+        width: var(--light-size, 6%);
+        aspect-ratio: 1 / 1;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        pointer-events: none;
+        mix-blend-mode: screen;
+        background: radial-gradient(circle, rgba(255, 238, 187, 0.9) 0%, rgba(255, 199, 106, 0.5) 48%, rgba(255, 166, 81, 0.08) 72%, rgba(255, 166, 81, 0) 100%);
+        filter: blur(4px);
+        animation: flicker var(--dur, 3s) ease-in-out infinite;
+      }
+
+      .scene::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(120% 80% at 50% 110%, rgba(255, 173, 88, 0.12), rgba(0, 0, 0, 0) 45%),
+          radial-gradient(75% 50% at 50% 0%, rgba(115, 143, 255, 0.18), rgba(0, 0, 0, 0) 55%);
+        mix-blend-mode: screen;
+        opacity: 0.8;
+      }
+
+      .scene::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.3) 0 1px, transparent 1px),
+          radial-gradient(circle at 70% 45%, rgba(255, 233, 186, 0.25) 0 1px, transparent 1px),
+          radial-gradient(circle at 40% 80%, rgba(255, 245, 220, 0.18) 0 1px, transparent 1px);
+        background-size: 180px 180px, 240px 240px, 300px 300px;
+        opacity: 0.35;
+        animation: dustDrift 18s linear infinite;
+      }
+
+      .note-panel {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        width: min(92vw, 360px);
+        background: var(--panel-bg);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+        padding: 0.9rem;
+        backdrop-filter: blur(5px);
+        display: none;
+      }
+
+      .note-panel.open {
+        display: block;
+      }
+
+      .note-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.6rem;
+      }
+
+      .note-title {
+        margin: 0;
+        font-size: 0.98rem;
+      }
+
+      .close-btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 0.25rem 0.45rem;
+        cursor: pointer;
+      }
+
+      .note-input {
+        width: 100%;
+        min-height: 140px;
+        resize: vertical;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(6, 8, 15, 0.72);
+        color: var(--text);
+        padding: 0.7rem;
+        font: inherit;
+      }
+
+      .panel-footer {
+        margin-top: 0.6rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .save-btn {
+        border: none;
+        border-radius: 9px;
+        cursor: pointer;
+        background: var(--accent);
+        color: #30210d;
+        padding: 0.45rem 0.8rem;
+        font-weight: 700;
+      }
+
+      .saved-text {
+        opacity: 0.8;
+        font-size: 0.85rem;
+      }
+
+      .zoom-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: rgba(10, 10, 18, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 999px;
+        padding: 0.25rem 0.35rem;
+        backdrop-filter: blur(4px);
+      }
+
+      .zoom-btn {
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        border-radius: 999px;
+        width: 2rem;
+        height: 2rem;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      .zoom-label {
+        min-width: 4ch;
+        text-align: center;
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+
+      @media (max-width: 700px) {
+        body {
+          padding: 0.65rem;
+          place-items: start center;
+        }
+
+        .scene {
+          width: min(100vw - 1.3rem, var(--img-native-width, 92vw));
+          margin-top: 0.4rem;
+        }
+
+        .note-panel {
+          right: 0.65rem;
+          left: 0.65rem;
+          bottom: 0.65rem;
+          width: auto;
+        }
+
+        .zoom-controls {
+          position: fixed;
+          top: 0.65rem;
+          right: 0.65rem;
+          z-index: 20;
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(0.95);
+          opacity: 0.95;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.08);
+          opacity: 0.75;
+        }
+      }
+
+      @keyframes ring {
+        0% {
+          transform: scale(0.88);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(1.35);
+          opacity: 0;
+        }
+      }
+
+      @keyframes flicker {
+        0%,
+        100% {
+          opacity: 0.9;
+        }
+        20% {
+          opacity: 0.7;
+        }
+        55% {
+          opacity: 1;
+        }
+        75% {
+          opacity: 0.74;
+        }
+      }
+
+      @keyframes idleFloat {
+        0%,
+        100% {
+          translate: 0 0;
+        }
+        50% {
+          translate: 0 -6px;
+        }
+      }
+
+      @keyframes dustDrift {
+        0% {
+          transform: translate3d(0, 0, 30px);
+        }
+        50% {
+          transform: translate3d(-4%, -2%, 30px);
+        }
+        100% {
+          transform: translate3d(-8%, -4%, 30px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scene-wrap">
+      <div class="scene" id="scene">
+        <img src="./houses1.jpg" alt="Colorful hanging houses on a dark background" />
+      </div>
+      <div class="zoom-controls" aria-label="Zoom controls">
+        <button class="zoom-btn" id="zoomOut" type="button" aria-label="Zoom out">-</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button class="zoom-btn" id="zoomIn" type="button" aria-label="Zoom in">+</button>
+      </div>
+    </div>
+
+    <aside class="note-panel" id="notePanel" aria-live="polite">
+      <div class="note-header">
+        <h2 class="note-title" id="noteTitle">House Note</h2>
+        <button class="close-btn" id="closePanel" type="button" aria-label="Close note panel">Close</button>
+      </div>
+      <textarea id="noteInput" class="note-input" placeholder="Write your notes for this house..."></textarea>
+      <div class="panel-footer">
+        <span id="savedText" class="saved-text">Not saved yet</span>
+        <button class="save-btn" id="saveNote" type="button">Save Note</button>
+      </div>
+    </aside>
+
+    <script>
+      const windows = [
+        { id: "left-red-house-window", label: "Left red house - front window", x: 4.8, y: 34.5, lightSize: 5.4, spotSize: 2.7, glowDur: "3.0s" },
+        { id: "blue-left-window", label: "Blue house - left window", x: 10.8, y: 21.2, lightSize: 5.8, spotSize: 2.8, glowDur: "3.1s" },
+        { id: "blue-right-window", label: "Blue house - right window", x: 20, y: 21.1, lightSize: 5.8, spotSize: 2.8, glowDur: "2.8s" },
+        { id: "blue-lower-window", label: "Blue house - lower window", x: 14.1, y: 28.8, lightSize: 5.2, spotSize: 2.6, glowDur: "2.85s" },
+        { id: "middle-teal-round-window", label: "Middle teal house - round window", x: 35.6, y: 45.5, lightSize: 5.2, spotSize: 2.7, glowDur: "3.3s" },
+        { id: "middle-teal-right-window", label: "Middle teal house - right window", x: 41.7, y: 52.8, lightSize: 4.9, spotSize: 2.6, glowDur: "2.95s" },
+        { id: "green-door-window", label: "Green house - doorway light", x: 72.8, y: 34.4, lightSize: 4.4, spotSize: 2.6, glowDur: "2.6s" },
+        { id: "green-main-window", label: "Green house - main window", x: 77.8, y: 33.5, lightSize: 5.1, spotSize: 2.7, glowDur: "3.2s" },
+        { id: "teal-right-round-window", label: "Right teal house - round window", x: 95.1, y: 30.5, lightSize: 4.4, spotSize: 2.6, glowDur: "3.3s" },
+        { id: "teal-right-front-window", label: "Right teal house - front window", x: 92.2, y: 38.6, lightSize: 4.9, spotSize: 2.6, glowDur: "2.75s" },
+        { id: "center-purple-window", label: "Center purple house - window", x: 53.1, y: 50.6, lightSize: 4.9, spotSize: 2.7, glowDur: "2.7s" },
+        { id: "orange-left-window", label: "Orange house - left window", x: 75.3, y: 55.6, lightSize: 4.6, spotSize: 2.6, glowDur: "3.4s" },
+        { id: "orange-right-window", label: "Orange house - right window", x: 80.1, y: 55.6, lightSize: 4.6, spotSize: 2.6, glowDur: "2.9s" },
+        { id: "orange-lower-window", label: "Orange house - lower window", x: 80.1, y: 60.2, lightSize: 4.3, spotSize: 2.5, glowDur: "3.1s" },
+        { id: "bottom-purple-round-window", label: "Bottom purple house - round window", x: 53.9, y: 66.2, lightSize: 5, spotSize: 2.8, glowDur: "3.2s" },
+        { id: "bottom-purple-side-window", label: "Bottom purple house - side window", x: 49.2, y: 69.5, lightSize: 4.2, spotSize: 2.5, glowDur: "2.75s" },
+        { id: "bottom-purple-door-glow", label: "Bottom purple house - door light", x: 56.3, y: 76.5, lightSize: 4.2, spotSize: 2.4, glowDur: "2.8s" }
+      ];
+
+      const scene = document.getElementById("scene");
+      const sceneImage = scene.querySelector("img");
+      const notePanel = document.getElementById("notePanel");
+      const noteTitle = document.getElementById("noteTitle");
+      const noteInput = document.getElementById("noteInput");
+      const closePanel = document.getElementById("closePanel");
+      const saveNote = document.getElementById("saveNote");
+      const savedText = document.getElementById("savedText");
+      const zoomIn = document.getElementById("zoomIn");
+      const zoomOut = document.getElementById("zoomOut");
+      const zoomLabel = document.getElementById("zoomLabel");
+
+      let activeWindow = null;
+      let zoomLevel = 1;
+      let tiltX = 0;
+      let tiltY = 0;
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function getStorageKey(windowId) {
+        return "window-note-" + windowId;
+      }
+
+      function formatTimestamp(date) {
+        return "Saved " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+
+      function syncSceneToImageSize() {
+        if (!sceneImage || !sceneImage.naturalWidth) {
+          return;
+        }
+
+        scene.style.setProperty("--img-native-width", sceneImage.naturalWidth + "px");
+      }
+
+      if (sceneImage.complete) {
+        syncSceneToImageSize();
+      } else {
+        sceneImage.addEventListener("load", syncSceneToImageSize, { once: true });
+      }
+
+      function addDepth(element, depth) {
+        element.style.transform = "translate(-50%, -50%) translateZ(" + depth + "px)";
+      }
+
+      function applySceneTransform() {
+        scene.style.setProperty("--rx", tiltX.toFixed(2) + "deg");
+        scene.style.setProperty("--ry", tiltY.toFixed(2) + "deg");
+        scene.style.setProperty("--scale", zoomLevel.toFixed(3));
+        zoomLabel.textContent = Math.round(zoomLevel * 100) + "%";
+      }
+
+      windows.forEach((windowPoint) => {
+        const light = document.createElement("div");
+        light.className = "window-light";
+        light.style.left = windowPoint.x + "%";
+        light.style.top = windowPoint.y + "%";
+        light.style.setProperty("--light-size", windowPoint.lightSize + "%");
+        light.style.setProperty("--dur", windowPoint.glowDur);
+        addDepth(light, 34);
+        scene.appendChild(light);
+
+        const hotspot = document.createElement("button");
+        hotspot.type = "button";
+        hotspot.className = "hotspot";
+        hotspot.style.left = windowPoint.x + "%";
+        hotspot.style.top = windowPoint.y + "%";
+        hotspot.style.setProperty("--spot-size", windowPoint.spotSize + "%");
+        hotspot.setAttribute("aria-label", "Open notes for " + windowPoint.label);
+        hotspot.title = windowPoint.label;
+        addDepth(hotspot, 56);
+
+        hotspot.addEventListener("click", () => {
+          activeWindow = windowPoint;
+          noteTitle.textContent = windowPoint.label;
+          noteInput.value = localStorage.getItem(getStorageKey(windowPoint.id)) || "";
+          savedText.textContent = "Editing";
+          notePanel.classList.add("open");
+          noteInput.focus();
+        });
+
+        scene.appendChild(hotspot);
+      });
+
+      function updateParallax(clientX, clientY) {
+        const rect = scene.getBoundingClientRect();
+        const px = (clientX - rect.left) / rect.width;
+        const py = (clientY - rect.top) / rect.height;
+        tiltY = (px - 0.5) * 10;
+        tiltX = (0.5 - py) * 8;
+        applySceneTransform();
+        scene.style.boxShadow = 0 + " " + (28 + py * 10).toFixed(0) + "px 74px rgba(0, 0, 0, 0.58)";
+      }
+
+      scene.addEventListener("pointermove", (event) => {
+        updateParallax(event.clientX, event.clientY);
+      });
+
+      scene.addEventListener("pointerleave", () => {
+        tiltX = 0;
+        tiltY = 0;
+        applySceneTransform();
+        scene.style.boxShadow = "0 24px 60px rgba(0, 0, 0, 0.55)";
+      });
+
+      function changeZoom(delta) {
+        zoomLevel = clamp(zoomLevel + delta, 0.75, 1.85);
+        applySceneTransform();
+      }
+
+      zoomIn.addEventListener("click", () => changeZoom(0.12));
+      zoomOut.addEventListener("click", () => changeZoom(-0.12));
+
+      scene.addEventListener(
+        "wheel",
+        (event) => {
+          event.preventDefault();
+          const direction = event.deltaY > 0 ? -0.08 : 0.08;
+          changeZoom(direction);
+        },
+        { passive: false }
+      );
+
+      applySceneTransform();
+
+      saveNote.addEventListener("click", () => {
+        if (!activeWindow) {
+          return;
+        }
+
+        localStorage.setItem(getStorageKey(activeWindow.id), noteInput.value);
+        savedText.textContent = formatTimestamp(new Date());
+      });
+
+      closePanel.addEventListener("click", () => {
+        notePanel.classList.remove("open");
+        activeWindow = null;
+      });
+    </script>
+  </body>
+</html>
