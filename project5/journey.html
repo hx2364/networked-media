@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Journey — My Travel Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #050507;
+      min-height: 100vh;
+      font-family: 'Lora', serif;
+      color: #fff;
+    }
+
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
+    }
+
+    .header__back {
+      color: #c8b89a;
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .header__back:hover { opacity: 1; }
+
+    .header__title {
+      font-family: 'Lobster', cursive;
+      font-size: 1.4rem;
+      letter-spacing: 0.02em;
+      font-weight: 400;
+    }
+
+    .scene-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+    .scene-bg img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.35;
+    }
+
+    .instruction {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 100px 20px 20px;
+      font-style: italic;
+      color: #e2d4bb;
+      font-size: clamp(1.06rem, 2.3vw, 1.26rem);
+      line-height: 1.55;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .instruction__line {
+      opacity: 0;
+      transform: translateY(8px);
+      animation: instruction-reveal 500ms ease forwards;
+    }
+    .instruction__line:nth-child(1) { animation-delay: 120ms; }
+    .instruction__line:nth-child(2) { animation-delay: 450ms; }
+
+    @keyframes instruction-reveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .houses-grid {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 32px 24px;
+      padding: 20px 40px 60px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .house-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .house-card__img-wrap { position: relative; }
+
+    .house-card__img {
+      width: clamp(130px, 16vw, 200px);
+      height: auto;
+      display: block;
+      filter:
+        drop-shadow(0 0 18px rgba(255,200,80,0.7))
+        drop-shadow(0 0 40px rgba(255,160,40,0.45));
+      animation: glow-pulse 3s ease-in-out infinite;
+    }
+
+    .house-card:nth-child(1) .house-card__img { animation-delay: 0s; }
+    .house-card:nth-child(2) .house-card__img { animation-delay: 0.5s; }
+    .house-card:nth-child(3) .house-card__img { animation-delay: 1s; }
+    .house-card:nth-child(4) .house-card__img { animation-delay: 1.5s; }
+    .house-card:nth-child(5) .house-card__img { animation-delay: 2s; }
+    .house-card:nth-child(6) .house-card__img { animation-delay: 2.5s; }
+
+    @keyframes glow-pulse {
+      0%,100% { filter: drop-shadow(0 0 14px rgba(255,200,80,0.65)) drop-shadow(0 0 32px rgba(255,160,40,0.35)); }
+      50%      { filter: drop-shadow(0 0 26px rgba(255,220,100,0.95)) drop-shadow(0 0 55px rgba(255,180,60,0.65)); }
+    }
+
+    .house-card__img-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,220,120,0);
+      transition: border-color 0.25s;
+      pointer-events: none;
+    }
+    .house-card:hover .house-card__img-wrap::after { border-color: rgba(255,220,120,0.6); }
+
+    .house-card__label {
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #c8b89a;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .house-card:hover .house-card__label { opacity: 1; }
+
+    .house-card:nth-child(1) { animation: float1 4.2s ease-in-out infinite; }
+    .house-card:nth-child(2) { animation: float2 3.8s ease-in-out infinite; }
+    .house-card:nth-child(3) { animation: float3 4.5s ease-in-out infinite; }
+    .house-card:nth-child(4) { animation: float4 4.0s ease-in-out infinite; }
+    .house-card:nth-child(5) { animation: float5 3.6s ease-in-out infinite; }
+    .house-card:nth-child(6) { animation: float6 4.8s ease-in-out infinite; }
+
+    @keyframes float1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+    @keyframes float3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    @keyframes float4 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    @keyframes float5 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+    @keyframes float6 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+
+    .house-card:hover { animation-play-state: paused; }
+  </style>
+</head>
+<body>
+
+  <div class="scene-bg">
+    <img src="images/houses1.jpg" alt="Glowing village" />
+  </div>
+
+  <header class="header">
+    <a class="header__back" href="index.html">← Home</a>
+    <span class="header__title">My Travel Journal</span>
+    <a class="header__back" href="gallery.html">Gallery →</a>
+  </header>
+
+  <p class="instruction">
+    <span class="instruction__line">Six glowing houses. Six hidden places.</span>
+    <span class="instruction__line">Click a glowing house to begin your guessing game ✦</span>
+  </p>
+
+  <div class="houses-grid">
+
+    <a class="house-card" href="house.html?id=tokyo">
+      <div class="house-card__img-wrap">
+        <img class="house-card__img" src="images/house12.png" alt="House" />
+      </div>
+      <span class="house-card__label">Enter</span>
+    </a>
+
+    <a class="house-card" href="house.html?id=israel">
+      <div class="house-card__img-wrap">
+        <img class="house-card__img" src="images/house3.png" alt="House" />
+      </div>
+      <span class="house-card__label">Enter</span>
+    </a>
+
+    <a class="house-card" href="house.html?id=greece">
+      <div class="house-card__img-wrap">
+        <img class="house-card__img" src="images/house2.png" alt="House" />
+      </div>
+      <span class="house-card__label">Enter</span>
+    </a>
+
+    <a class="house-card" href="house.html?id=london">
+      <div class="house-card__img-wrap">
+        <img class="house-card__img" src="images/house6.png" alt="House" />
+      </div>
+      <span class="house-card__label">Enter</span>
+    </a>
+
+    <a class="house-card" href="house.html?id=russia">
+      <div class="house-card__img-wrap">
+        <img class="house-card__img" src="images/house11.png" alt="House" />
+      </div>
+      <span class="house-card__label">Enter</span>
+    </a>
+
+    <a class="house-card" href="house.html?id=bangkok">
+      <div class="house-card__img-wrap">
+        <img class="house-card__img" src="images/house13.png" alt="House" />
+      </div>
+      <span class="house-card__label">Enter</span>
+    </a>
+
+  </div>
+
+</body>
+</html>

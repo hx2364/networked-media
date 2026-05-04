@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your letter — My Travel Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #000;
+      color: #2a1a0a;
+      font-family: 'Lora', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+    }
+
+    .journal-page {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .journal-paper {
+      width: 100%;
+      background: #000 url('images/notes2.png') center top / contain no-repeat;
+      min-height: min(88vh, 720px);
+      padding: clamp(40px, 14vw, 88px) clamp(32px, 11vw, 72px) clamp(48px, 12vw, 96px);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .journal-place {
+      font-family: 'Lobster', cursive;
+      font-size: clamp(1.15rem, 3.5vw, 1.45rem);
+      color: #3a2418;
+      text-align: center;
+      margin-bottom: 18px;
+      opacity: 0.92;
+    }
+
+    .journal-body {
+      font-size: clamp(0.95rem, 2.8vw, 1.05rem);
+      line-height: 1.75;
+      color: #2a1a0a;
+      text-align: left;
+      white-space: pre-wrap;
+    }
+
+    .journal-actions {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .journal-actions a {
+      text-align: center;
+      text-decoration: none;
+      font-family: 'Lora', serif;
+      font-size: 0.95rem;
+      padding: 14px 20px;
+      border-radius: 999px;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .btn-create {
+      background: #5a3a1a;
+      color: #f0e8d5;
+      border: 1px solid #7a5030;
+    }
+    .btn-create:hover {
+      background: #7a5030;
+      color: #fff;
+    }
+
+    .btn-leave {
+      background: transparent;
+      color: #8a8070;
+      border: 1px solid #333;
+    }
+    .btn-leave:hover {
+      color: #c8b89a;
+      border-color: #555;
+    }
+  </style>
+  <script src="memories.js"></script>
+</head>
+<body>
+  <main class="journal-page">
+    <div class="journal-paper">
+      <p class="journal-place" id="placeLabel"></p>
+      <div class="journal-body" id="journalText"></div>
+    </div>
+    <nav class="journal-actions">
+      <a class="btn-create" href="create.html">Create my own memory journal</a>
+      <a class="btn-leave" href="gallery.html">I want to see other memories</a>
+    </nav>
+  </main>
+
+  <script>
+    (function() {
+      var params = new URLSearchParams(location.search);
+      var id = params.get('id') || 'tokyo';
+      var place = params.get('place');
+      try {
+        if (place) place = decodeURIComponent(place);
+      } catch (e) {
+        place = params.get('place');
+      }
+
+      var mem = typeof MEMORIES !== 'undefined' ? MEMORIES[id] : null;
+      var textEl = document.getElementById('journalText');
+      var labelEl = document.getElementById('placeLabel');
+
+      labelEl.textContent = place || 'A place you imagined';
+
+      if (mem && mem.journal) {
+        textEl.textContent = mem.journal;
+      } else {
+        textEl.textContent = 'There is no letter saved for this house yet.';
+      }
+    })();
+  </script>
+</body>
+</html>

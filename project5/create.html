@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Your Memory — My Travel Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@seald-io/nedb/browser-version/out/nedb.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #050507;
+      min-height: 100vh;
+      font-family: 'Lora', serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ── */
+    .header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(0,0,0,0.6);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header__back {
+      color: #c8b89a;
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .header__back:hover { opacity: 1; }
+    .header__title {
+      font-family: 'Lobster', cursive;
+      font-size: 1.3rem;
+      letter-spacing: 0.02em;
+      font-weight: 400;
+    }
+
+    /* ── Main ── */
+    .main {
+      width: 100%;
+      max-width: 680px;
+      padding: 36px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 0.76rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    /* ── City / country inputs ── */
+    .city-input {
+      width: 100%;
+      background: #111;
+      border: 1px solid #3a3020;
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-family: 'Lora', serif;
+      font-size: 1.05rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .city-input:focus { border-color: #c8b89a; }
+    .city-input::placeholder { color: #444; }
+    .city-input:disabled { opacity: 0.5; }
+    .location-row { display: flex; gap: 12px; }
+    .location-row > div { flex: 1; }
+
+    /* ── Submit hint ── */
+    .submit-hint {
+      font-size: 0.8rem;
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      min-height: 1.2em;
+      transition: opacity 0.2s;
+    }
+
+    /* ── Mode toggle ── */
+    .mode-toggle {
+      display: flex;
+      background: #0f0f11;
+      border: 1px solid #2a2010;
+      border-radius: 999px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 11px 16px;
+      border: none;
+      border-radius: 999px;
+      font-family: 'Lora', serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      background: transparent;
+      color: #666;
+    }
+    .mode-btn.active { background: #c8b89a; color: #111; font-weight: 600; }
+    .mode-btn:disabled { cursor: not-allowed; }
+
+    /* ── Shared textarea style ── */
+    .journal-textarea {
+      width: 100%;
+      min-height: 200px;
+      background: #111;
+      border: 1px solid #3a3020;
+      color: #f0e8d5;
+      padding: 16px;
+      border-radius: 12px;
+      font-family: 'Lora', serif;
+      font-size: 0.95rem;
+      line-height: 1.75;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+    .journal-textarea:focus { border-color: #c8b89a; }
+    .journal-textarea::placeholder { color: #444; }
+    .journal-textarea:disabled { opacity: 0.5; resize: none; }
+
+    /* ── Guided panel ── */
+    .guided-inner { display: flex; flex-direction: column; gap: 16px; }
+
+    .q-progress { display: flex; gap: 7px; justify-content: center; }
+    .q-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 1.5px solid #3a3020;
+      transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .q-dot.done  { background: #c8b89a; border-color: #c8b89a; }
+    .q-dot.active {
+      background: #f5c842; border-color: #f5c842;
+      box-shadow: 0 0 7px rgba(245,200,66,0.7);
+    }
+
+    .question-bubble {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: #1c1a14;
+      border: 1px solid #3a3020;
+      border-radius: 4px 16px 16px 16px;
+      padding: 14px 16px;
+      color: #f0e8d5;
+      font-size: 1.02rem;
+      line-height: 1.6;
+      animation: bubble-in 0.3s ease;
+    }
+    @keyframes bubble-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .question-bubble__avatar { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+    .answer-area { display: flex; flex-direction: column; gap: 8px; }
+    .answer-textarea {
+      width: 100%;
+      min-height: 80px;
+      background: #111;
+      border: 1px solid #3a3020;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-family: 'Lora', serif;
+      font-size: 0.93rem;
+      line-height: 1.65;
+      outline: none;
+      resize: none;
+      transition: border-color 0.2s;
+    }
+    .answer-textarea:focus { border-color: #c8b89a; }
+    .answer-textarea::placeholder { color: #444; }
+
+    .next-btn {
+      align-self: flex-end;
+      background: #c8b89a;
+      color: #111;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 30px;
+      font-family: 'Lora', serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .next-btn:hover { background: #e0d0b0; }
+
+    /* ── Accordion ── */
+    .accordion { border: 1px solid #2a2010; border-radius: 10px; overflow: hidden; }
+    .accordion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 16px;
+      background: #0f0f0d;
+      cursor: pointer;
+      font-size: 0.76rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #c8b89a;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .accordion-header:hover { background: #141410; }
+    .accordion-chevron { transition: transform 0.28s; display: inline-block; }
+    .accordion-chevron.open { transform: rotate(180deg); }
+    .accordion-body {
+      padding: 16px;
+      background: #0a0a0c;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .accordion-body.hidden { display: none; }
+    .qa-pair { display: flex; flex-direction: column; gap: 3px; }
+    .qa-q { font-size: 0.79rem; color: #666; font-style: italic; }
+    .qa-a { font-size: 0.92rem; color: #d8ccb8; line-height: 1.55; }
+
+    /* ── Assembled preview ── */
+    .preview-block { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .generating {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: #666;
+      font-style: italic;
+      font-size: 0.88rem;
+      padding: 6px 0;
+    }
+    .gen-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #c8b89a;
+      animation: gdot 1.2s infinite;
+      flex-shrink: 0;
+    }
+    .gen-dot:nth-child(2) { animation-delay: 0.2s; }
+    .gen-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes gdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+    /* ── Review step ── */
+    .review-section {
+      display: none;
+      flex-direction: column;
+      gap: 22px;
+      animation: fade-up 0.35s ease;
+    }
+    .review-section.show { display: flex; }
+    @keyframes fade-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    .review-city {
+      font-family: 'Lobster', cursive;
+      font-size: 1.7rem;
+      color: #f0e8d5;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+
+    .review-journal {
+      background: #0f0f0d;
+      border: 1px solid #2a2010;
+      border-radius: 12px;
+      padding: 18px 20px;
+      color: #d8ccb8;
+      font-size: 0.94rem;
+      line-height: 1.78;
+      font-style: italic;
+      white-space: pre-wrap;
+    }
+
+    /* ── House carousel ── */
+    .carousel-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+    .carousel {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 12px 4px 16px;
+      scrollbar-width: thin;
+      scrollbar-color: #2a2010 transparent;
+    }
+    .carousel::-webkit-scrollbar { height: 4px; }
+    .carousel::-webkit-scrollbar-thumb { background: #2a2010; border-radius: 2px; }
+
+    .carousel-item {
+      flex-shrink: 0;
+      cursor: pointer;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      padding: 8px;
+      background: #0f0f0d;
+      transition: border-color 0.2s, background 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .carousel-item:hover { background: #1a1a14; }
+    .carousel-item.selected {
+      border-color: #f5c842;
+      background: #1a1a0a;
+      box-shadow: 0 0 14px rgba(245,200,66,0.25);
+    }
+    .carousel-item img {
+      width: 72px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 10px rgba(255,200,80,0.45));
+      transition: filter 0.2s;
+    }
+    .carousel-item.selected img {
+      filter: drop-shadow(0 0 18px rgba(255,200,80,0.9));
+    }
+    .carousel-item__num {
+      font-size: 0.68rem;
+      color: #555;
+      letter-spacing: 0.08em;
+    }
+    .carousel-item.selected .carousel-item__num { color: #c8b89a; }
+
+    /* ── Review action row ── */
+    .review-actions { display: flex; gap: 12px; }
+    .edit-btn {
+      flex: 1;
+      background: transparent;
+      border: 1.5px solid #3a3020;
+      color: #888;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Lora', serif;
+      font-size: 0.93rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .edit-btn:hover { border-color: #c8b89a; color: #c8b89a; }
+    .confirm-btn {
+      flex: 2;
+      background: #c8b89a;
+      color: #111;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Lora', serif;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .confirm-btn:hover { background: #e0d0b0; }
+
+    /* ── Submit (review trigger) ── */
+    .submit-btn {
+      width: 100%;
+      background: #c8b89a;
+      color: #111;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .submit-btn:hover:not(:disabled) { background: #e0d0b0; }
+    .submit-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+    /* ── Confirmation ── */
+    .confirmation {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+      padding: 36px 24px;
+      background: #111008;
+      border: 1px solid #3a3020;
+      border-radius: 16px;
+      animation: conf-in 0.5s ease;
+    }
+    .confirmation.show { display: flex; }
+    @keyframes conf-in { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .conf-icon { font-size: 2.2rem; }
+    .conf-title { font-family: 'Lobster', cursive; font-size: 2rem; color: #f5c842; font-weight: 400; }
+    .conf-city { font-style: italic; color: #c8b89a; font-size: 1rem; line-height: 1.6; max-width: 420px; }
+    .conf-sub { font-size: 0.85rem; color: #555; font-style: italic; }
+    .play-btn {
+      display: inline-block;
+      margin-top: 6px;
+      border: 1.5px solid #c8b89a;
+      color: #c8b89a;
+      background: transparent;
+      border-radius: 999px;
+      padding: 12px 34px;
+      font-family: 'Lora', serif;
+      font-size: 0.93rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .play-btn:hover { background: #c8b89a; color: #111; }
+    .play-btn-soon { color: #444; font-size: 0.82rem; font-style: italic; margin-top: 6px; }
+    .gallery-btn {
+      display: inline-block;
+      background: transparent;
+      border: 1.5px solid #555;
+      color: #888;
+      border-radius: 999px;
+      padding: 12px 34px;
+      font-family: 'Lora', serif;
+      font-size: 0.93rem;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .gallery-btn:hover { border-color: #c8b89a; color: #c8b89a; }
+
+    @media (max-width: 520px) {
+      .header { padding: 12px 16px; }
+      .mode-btn { font-size: 0.82rem; padding: 9px 10px; }
+      .carousel-item img { width: 58px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <a class="header__back" href="journey.html">← Village</a>
+    <span class="header__title">Add Your Memory</span>
+    <span style="width: 80px"></span>
+  </header>
+
+  <main class="main">
+
+    <!-- ── Input step ─────────────────────────────────────────── -->
+    <div id="inputStep">
+
+      <!-- City + Country -->
+      <div style="margin-bottom: 20px">
+        <p class="section-label">Where did you go?</p>
+        <div class="location-row">
+          <div>
+            <input class="city-input" id="cityInput" type="text"
+              placeholder="City (e.g. Tokyo)" autocomplete="off" />
+          </div>
+          <div>
+            <input class="city-input" id="countryInput" type="text"
+              placeholder="Country (e.g. Japan)" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Name -->
+      <div style="margin-bottom: 28px">
+        <p class="section-label">Your name (optional)</p>
+        <input class="city-input" id="nameInput" type="text"
+          placeholder="How should we credit this memory?" autocomplete="off" />
+      </div>
+
+      <!-- Mode toggle -->
+      <div style="margin-bottom: 28px">
+        <p class="section-label">How would you like to share your memory?</p>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeWriteBtn">Write it yourself</button>
+          <button class="mode-btn"        id="modeGuidedBtn">Tell me about it</button>
+        </div>
+      </div>
+
+      <!-- Write panel -->
+      <div id="writePanel">
+        <textarea class="journal-textarea" id="writeTextarea"
+          placeholder="Write about your time there — what you saw, ate, felt, noticed…"></textarea>
+      </div>
+
+      <!-- Guided panel -->
+      <div id="guidedPanel" style="display:none">
+        <div class="guided-inner">
+
+          <div class="q-progress">
+            <div class="q-dot active" id="qdot0"></div>
+            <div class="q-dot"        id="qdot1"></div>
+            <div class="q-dot"        id="qdot2"></div>
+            <div class="q-dot"        id="qdot3"></div>
+            <div class="q-dot"        id="qdot4"></div>
+            <div class="q-dot"        id="qdot5"></div>
+          </div>
+
+          <div id="questionArea">
+            <div class="question-bubble">
+              <span class="question-bubble__avatar">📖</span>
+              <span id="questionText"></span>
+            </div>
+            <div class="answer-area" style="margin-top:10px">
+              <textarea class="answer-textarea" id="answerInput"
+                placeholder="Take your time…" rows="3"></textarea>
+              <button class="next-btn" id="nextBtn">Next →</button>
+            </div>
+          </div>
+
+          <div id="assembledSection" style="display:none">
+            <div class="accordion">
+              <div class="accordion-header" id="accordionHeader">
+                <span>Your answers</span>
+                <span class="accordion-chevron" id="accordionChevron">▾</span>
+              </div>
+              <div class="accordion-body hidden" id="accordionBody"></div>
+            </div>
+            <div class="preview-block">
+              <p class="section-label" style="margin-top:16px">Your memory, assembled</p>
+              <div class="generating" id="generatingIndicator">
+                <span class="gen-dot"></span>
+                <span class="gen-dot"></span>
+                <span class="gen-dot"></span>
+                <span style="margin-left:5px">Writing your journal…</span>
+              </div>
+              <textarea class="journal-textarea" id="assembledTextarea"
+                style="display:none; min-height:170px"
+                placeholder="Your assembled journal will appear here…"></textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Review trigger -->
+      <div style="margin-top: 28px; display: flex; flex-direction: column; gap: 8px;">
+        <button class="submit-btn" id="submitBtn" disabled>Review & Save →</button>
+        <p class="submit-hint" id="submitHint"></p>
+      </div>
+
+    </div><!-- /inputStep -->
+
+    <!-- ── Review step ────────────────────────────────────────── -->
+    <div class="review-section" id="reviewStep">
+
+      <div>
+        <p class="section-label">Your memory of</p>
+        <p class="review-city" id="reviewCity"></p>
+      </div>
+
+      <div>
+        <p class="section-label">Journal</p>
+        <div class="review-journal" id="reviewJournal"></div>
+      </div>
+
+      <div class="carousel-wrap">
+        <p class="section-label">Choose your house</p>
+        <div class="carousel" id="houseCarousel"></div>
+      </div>
+
+      <div class="review-actions">
+        <button class="edit-btn" id="editBtn">← Edit</button>
+        <button class="confirm-btn" id="confirmBtn">Confirm & Save ✦</button>
+      </div>
+
+    </div><!-- /reviewStep -->
+
+    <!-- ── Confirmation ───────────────────────────────────────── -->
+    <div class="confirmation" id="confirmation">
+      <div class="conf-icon">✦</div>
+      <h2 class="conf-title">Memory saved.</h2>
+      <p class="conf-city" id="confCity"></p>
+      <p class="conf-sub">Others who visit can now try to guess your place.</p>
+      <div id="playBtnWrap" style="display:flex;flex-direction:column;align-items:center;gap:10px"></div>
+      <a class="gallery-btn" href="gallery.html">View all memories →</a>
+    </div>
+
+  </main>
+
+  <script>
+    var PROXY_URL = "https://itp-ima-replicate-proxy.web.app/api/create_n_get";
+    var authToken = "";
+
+    var CITY_TO_HOUSE = {
+      tokyo: 'tokyo',     japan: 'tokyo',
+      jerusalem: 'israel', israel: 'israel',
+      santorini: 'greece', mykonos: 'greece', greece: 'greece',
+      london: 'london',    england: 'london',  uk: 'london',
+      moscow: 'russia',    russia: 'russia',
+      bangkok: 'bangkok',  thailand: 'bangkok'
+    };
+
+    var QUESTIONS = [
+      "When did you visit — what time of year was it?",
+      "What's the first thing you remember when you arrived?",
+      "What did you eat or drink that you still think about?",
+      "Was there a moment that surprised you or that you didn't expect?",
+      "What did it sound, smell, or feel like?",
+      "What would you tell someone who'd never been?"
+    ];
+
+    var HOUSE_IMAGES = [];
+    for (var i = 1; i <= 15; i++) { HOUSE_IMAGES.push('images/house' + i + '.png'); }
+
+    var db = null;
+    try { db = new Datastore({ filename: 'travel_journals', autoload: true }); } catch(e) {}
+
+    // ── State ──────────────────────────────────────────────────
+    var mode           = 'write';
+    var writeDraft     = '';
+    var currentQ       = 0;
+    var answers        = new Array(QUESTIONS.length).fill('');
+    var assembledText  = '';
+    var guidedComplete = false;
+    var selectedImage  = HOUSE_IMAGES[0];
+
+    // ── DOM ────────────────────────────────────────────────────
+    var cityInput           = document.getElementById('cityInput');
+    var countryInput        = document.getElementById('countryInput');
+    var nameInput           = document.getElementById('nameInput');
+    var modeWriteBtn        = document.getElementById('modeWriteBtn');
+    var modeGuidedBtn       = document.getElementById('modeGuidedBtn');
+    var writePanel          = document.getElementById('writePanel');
+    var guidedPanel         = document.getElementById('guidedPanel');
+    var writeTextarea       = document.getElementById('writeTextarea');
+    var questionArea        = document.getElementById('questionArea');
+    var questionText        = document.getElementById('questionText');
+    var answerInput         = document.getElementById('answerInput');
+    var nextBtn             = document.getElementById('nextBtn');
+    var assembledSection    = document.getElementById('assembledSection');
+    var assembledTextarea   = document.getElementById('assembledTextarea');
+    var generatingIndicator = document.getElementById('generatingIndicator');
+    var accordionHeader     = document.getElementById('accordionHeader');
+    var accordionBody       = document.getElementById('accordionBody');
+    var accordionChevron    = document.getElementById('accordionChevron');
+    var submitBtn           = document.getElementById('submitBtn');
+    var inputStep           = document.getElementById('inputStep');
+    var reviewStep          = document.getElementById('reviewStep');
+    var reviewCity          = document.getElementById('reviewCity');
+    var reviewJournal       = document.getElementById('reviewJournal');
+    var houseCarousel       = document.getElementById('houseCarousel');
+    var editBtn             = document.getElementById('editBtn');
+    var confirmBtn          = document.getElementById('confirmBtn');
+    var confirmation        = document.getElementById('confirmation');
+    var confCity            = document.getElementById('confCity');
+    var playBtnWrap         = document.getElementById('playBtnWrap');
+    var dots                = QUESTIONS.map(function(_, i) { return document.getElementById('qdot' + i); });
+
+    // ── Mode switch ────────────────────────────────────────────
+    modeWriteBtn.addEventListener('click', function() { switchMode('write'); });
+    modeGuidedBtn.addEventListener('click', function() { switchMode('guided'); });
+
+    function switchMode(newMode) {
+      if (newMode === mode) return;
+      mode = newMode;
+      if (mode === 'write') {
+        modeWriteBtn.classList.add('active');
+        modeGuidedBtn.classList.remove('active');
+        writePanel.style.display = '';
+        guidedPanel.style.display = 'none';
+        if (guidedComplete && assembledText && !writeTextarea.value.trim()) {
+          writeTextarea.value = assembledText;
+        }
+      } else {
+        modeGuidedBtn.classList.add('active');
+        modeWriteBtn.classList.remove('active');
+        writeDraft = writeTextarea.value;
+        guidedPanel.style.display = '';
+        writePanel.style.display = 'none';
+      }
+      checkSubmittable();
+    }
+
+    // ── Guided Q&A ─────────────────────────────────────────────
+    function showQuestion(index) {
+      questionText.textContent = QUESTIONS[index];
+      answerInput.value = answers[index] || '';
+      nextBtn.textContent = index === QUESTIONS.length - 1 ? 'Done ✦' : 'Next →';
+      updateDots(index);
+      answerInput.focus();
+    }
+
+    function updateDots(activeIndex) {
+      dots.forEach(function(d, i) {
+        d.classList.remove('active', 'done');
+        if (i < activeIndex)        d.classList.add('done');
+        else if (i === activeIndex) d.classList.add('active');
+      });
+    }
+
+    nextBtn.addEventListener('click', submitAnswer);
+    answerInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitAnswer(); }
+    });
+
+    function submitAnswer() {
+      answers[currentQ] = answerInput.value.trim();
+      if (currentQ < QUESTIONS.length - 1) {
+        currentQ++;
+        showQuestion(currentQ);
+      } else {
+        dots.forEach(function(d) { d.classList.remove('active'); d.classList.add('done'); });
+        questionArea.style.display = 'none';
+        assembledSection.style.display = '';
+        buildAccordion();
+        generateJournal();
+      }
+    }
+
+    // ── Accordion ──────────────────────────────────────────────
+    function buildAccordion() {
+      accordionBody.innerHTML = '';
+      QUESTIONS.forEach(function(q, i) {
+        var pair = document.createElement('div');
+        pair.className = 'qa-pair';
+        pair.innerHTML =
+          '<div class="qa-q">' + escHtml(q) + '</div>' +
+          '<div class="qa-a">' + escHtml(answers[i] || '—') + '</div>';
+        accordionBody.appendChild(pair);
+      });
+    }
+
+    accordionHeader.addEventListener('click', function() {
+      var isHidden = accordionBody.classList.contains('hidden');
+      accordionBody.classList.toggle('hidden');
+      accordionChevron.classList.toggle('open', isHidden);
+    });
+
+    // ── AI journal generation ──────────────────────────────────
+    function generateJournal() {
+      generatingIndicator.style.display = 'flex';
+      assembledTextarea.style.display = 'none';
+
+      var qaPairs = QUESTIONS.map(function(q, i) {
+        return 'Q: ' + q + '\nA: ' + (answers[i] || '(no answer)');
+      }).join('\n\n');
+
+      var prompt =
+        'You are a journal editor. Based on these travel Q&A responses, write a single personal journal entry ' +
+        'in first person, past tense. 4–6 sentences, evocative and specific. Use their actual details only — ' +
+        'do not invent anything they did not mention. Write only the journal entry, no intro or outro.\n\n' +
+        qaPairs + '\n\nJournal entry:';
+
+      fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-haiku',
+          input: { prompt: prompt, max_tokens: 220, temperature: 0.7 }
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        assembledText = data.output ? data.output.join('').trim() : answers.filter(Boolean).join(' ');
+        showAssembled();
+      })
+      .catch(function() {
+        assembledText = answers.filter(Boolean).join(' ');
+        showAssembled();
+      });
+    }
+
+    function showAssembled() {
+      generatingIndicator.style.display = 'none';
+      assembledTextarea.value = assembledText;
+      assembledTextarea.style.display = '';
+      guidedComplete = true;
+      checkSubmittable();
+    }
+
+    assembledTextarea.addEventListener('input', function() {
+      assembledText = assembledTextarea.value;
+      checkSubmittable();
+    });
+
+    // ── Submittable ────────────────────────────────────────────
+    cityInput.addEventListener('input', checkSubmittable);
+    countryInput.addEventListener('input', checkSubmittable);
+    writeTextarea.addEventListener('input', checkSubmittable);
+
+    function checkSubmittable() {
+      var hasCity    = cityInput.value.trim().length > 0;
+      var journal    = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
+      var hasContent = mode === 'write'
+        ? journal.length >= 20
+        : guidedComplete && journal.length >= 20;
+
+      submitBtn.disabled = !(hasCity && hasContent);
+
+      var hint = document.getElementById('submitHint');
+      if (!hasCity) {
+        hint.textContent = 'Enter a city to continue.';
+      } else if (!hasContent) {
+        var len = journal.length;
+        hint.textContent = mode === 'guided' && !guidedComplete
+          ? 'Complete the questions to continue.'
+          : 'Journal needs at least 20 characters (' + len + ' so far).';
+      } else {
+        hint.textContent = '';
+      }
+    }
+
+    // ── Review step ────────────────────────────────────────────
+    submitBtn.addEventListener('click', function() {
+      var city    = toTitleCase(cityInput.value.trim());
+      var country = toTitleCase(countryInput.value.trim());
+      var cityDisplay = country ? city + ', ' + country : city;
+      var journal = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
+
+      reviewCity.textContent    = cityDisplay;
+      reviewJournal.textContent = journal;
+
+      buildCarousel();
+
+      inputStep.style.display = 'none';
+      reviewStep.classList.add('show');
+      reviewStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    editBtn.addEventListener('click', function() {
+      reviewStep.classList.remove('show');
+      inputStep.style.display = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ── Carousel ───────────────────────────────────────────────
+    function buildCarousel() {
+      houseCarousel.innerHTML = '';
+      HOUSE_IMAGES.forEach(function(src, i) {
+        var item = document.createElement('div');
+        item.className = 'carousel-item' + (src === selectedImage ? ' selected' : '');
+        item.innerHTML =
+          '<img src="' + escHtml(src) + '" alt="House ' + (i + 1) + '" />' +
+          '<span class="carousel-item__num">' + (i + 1) + '</span>';
+        item.addEventListener('click', function() {
+          document.querySelectorAll('.carousel-item').forEach(function(el) { el.classList.remove('selected'); });
+          item.classList.add('selected');
+          selectedImage = src;
+        });
+        houseCarousel.appendChild(item);
+      });
+      // Scroll to selected
+      var selectedEl = houseCarousel.querySelector('.selected');
+      if (selectedEl) { selectedEl.scrollIntoView({ inline: 'center', block: 'nearest' }); }
+    }
+
+    // ── Confirm & Save ─────────────────────────────────────────
+    confirmBtn.addEventListener('click', function() {
+      var city         = toTitleCase(cityInput.value.trim());
+      var country      = toTitleCase(countryInput.value.trim());
+      var cityDisplay  = country ? city + ', ' + country : city;
+      var journal      = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
+      var collectedVia = mode === 'write' ? 'freeform' : 'guided';
+      var citySlug     = city.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+
+      var authorName = nameInput.value.trim() || 'Anonymous';
+
+      var entry = {
+        city:          cityDisplay,
+        citySlug:      citySlug,
+        journal:       journal,
+        houseImage:    selectedImage,
+        name:          authorName,
+        collected_via: collectedVia,
+        timestamp:     new Date().toISOString()
+      };
+
+      if (db) { db.insert(entry, function() {}); }
+      try { localStorage.setItem('user_journal_' + citySlug, journal); } catch(e) {}
+
+      // Save full metadata to index so gallery.html can read it (NeDB unreliable on file://)
+      try {
+        var index = JSON.parse(localStorage.getItem('user_entries_index') || '[]');
+        index.push({
+          city:      cityDisplay,
+          citySlug:  citySlug,
+          name:      authorName,
+          houseImage: selectedImage,
+          timestamp: entry.timestamp
+        });
+        localStorage.setItem('user_entries_index', JSON.stringify(index));
+      } catch(e) {}
+
+      reviewStep.classList.remove('show');
+
+      confCity.textContent = 'Your memory of ' + cityDisplay + ' is now part of this journal.';
+
+      var houseId = CITY_TO_HOUSE[citySlug] || CITY_TO_HOUSE[country.toLowerCase().replace(/[^a-z0-9]+/g,'_')];
+      if (houseId) {
+        var a = document.createElement('a');
+        a.className   = 'play-btn';
+        a.href        = 'house.html?id=' + houseId;
+        a.textContent = 'Play the guessing game →';
+        playBtnWrap.appendChild(a);
+      } else {
+        var note = document.createElement('p');
+        note.className   = 'play-btn-soon';
+        note.textContent = 'Custom houses for new cities coming soon.';
+        playBtnWrap.appendChild(note);
+      }
+
+      confirmation.classList.add('show');
+      confirmation.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    // ── Helpers ────────────────────────────────────────────────
+    function toTitleCase(str) {
+      return str.replace(/\w\S*/g, function(w) {
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      });
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Init ───────────────────────────────────────────────────
+    showQuestion(0);
+  </script>
+</body>
+</html>

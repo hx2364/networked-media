@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Gallery — My Travel Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@seald-io/nedb/browser-version/out/nedb.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #050507;
+      min-height: 100vh;
+      font-family: 'Lora', serif;
+      color: #fff;
+    }
+
+    /* ── Header ── */
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    }
+    .header__back {
+      color: #c8b89a;
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .header__back:hover { opacity: 1; }
+    .header__title {
+      font-family: 'Lobster', cursive;
+      font-size: 1.4rem;
+      letter-spacing: 0.02em;
+      font-weight: 400;
+    }
+    .header__add {
+      color: #c8b89a;
+      text-decoration: none;
+      font-size: 0.88rem;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      letter-spacing: 0.04em;
+    }
+    .header__add:hover { opacity: 1; }
+
+    /* ── Scene background ── */
+    .scene-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+    .scene-bg img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+    }
+
+    /* ── Instruction ── */
+    .instruction {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 110px 20px 16px;
+      font-style: italic;
+      color: #e2d4bb;
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      line-height: 1.55;
+      text-shadow: 0 2px 14px rgba(0,0,0,0.6);
+    }
+
+    /* ── Section divider ── */
+    .section-divider {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 40px;
+      margin-top: 24px;
+      color: #555;
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1e1e1e;
+    }
+
+    /* ── House grid ── */
+    .houses-grid {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 36px 28px;
+      padding: 20px 40px 60px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── House card ── */
+    .house-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+    }
+    .house-card__img-wrap { position: relative; }
+    .house-card__img {
+      width: clamp(110px, 14vw, 180px);
+      height: auto;
+      display: block;
+      filter:
+        drop-shadow(0 0 18px rgba(255,200,80,0.7))
+        drop-shadow(0 0 40px rgba(255,160,40,0.45));
+      animation: glow-pulse 3s ease-in-out infinite;
+    }
+    @keyframes glow-pulse {
+      0%,100% { filter: drop-shadow(0 0 14px rgba(255,200,80,0.65)) drop-shadow(0 0 32px rgba(255,160,40,0.35)); }
+      50%      { filter: drop-shadow(0 0 26px rgba(255,220,100,0.95)) drop-shadow(0 0 55px rgba(255,180,60,0.65)); }
+    }
+    .house-card__img-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,220,120,0);
+      transition: border-color 0.25s;
+      pointer-events: none;
+    }
+    .house-card:hover .house-card__img-wrap::after { border-color: rgba(255,220,120,0.6); }
+
+    .house-card__meta {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .house-card__name {
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      color: #c8b89a;
+      text-transform: uppercase;
+    }
+    .house-card__label {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #444;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .house-card:hover .house-card__label { opacity: 1; color: #888; }
+
+    /* Float animations — 8 variants cycling */
+    .house-card:nth-child(8n+1) { animation: float1 4.2s ease-in-out infinite; }
+    .house-card:nth-child(8n+2) { animation: float2 3.8s ease-in-out infinite; }
+    .house-card:nth-child(8n+3) { animation: float3 4.5s ease-in-out infinite; }
+    .house-card:nth-child(8n+4) { animation: float4 4.0s ease-in-out infinite; }
+    .house-card:nth-child(8n+5) { animation: float5 3.6s ease-in-out infinite; }
+    .house-card:nth-child(8n+6) { animation: float6 4.8s ease-in-out infinite; }
+    .house-card:nth-child(8n+7) { animation: float7 4.1s ease-in-out infinite; }
+    .house-card:nth-child(8n+0) { animation: float8 3.9s ease-in-out infinite; }
+
+    @keyframes float1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+    @keyframes float3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    @keyframes float4 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    @keyframes float5 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+    @keyframes float6 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+    @keyframes float7 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-11px)} }
+    @keyframes float8 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-13px)} }
+    .house-card:hover { animation-play-state: paused; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 32px 20px;
+      color: #444;
+      font-style: italic;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    .empty-state a { color: #c8b89a; text-decoration: none; }
+    .empty-state a:hover { text-decoration: underline; }
+
+    @media (max-width: 520px) {
+      .header { padding: 12px 16px; }
+      .houses-grid { gap: 24px 16px; padding: 16px 20px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scene-bg">
+    <img src="images/houses1.jpg" alt="Glowing village" />
+  </div>
+
+  <header class="header">
+    <a class="header__back" href="journey.html">← Village</a>
+    <span class="header__title">Memory Gallery</span>
+    <a class="header__add" href="create.html">+ Add yours</a>
+  </header>
+
+  <p class="instruction">Every glowing house holds someone's memory. Pick one and try to guess the place.</p>
+
+  <!-- Helen's 6 hardcoded houses -->
+  <div class="section-divider">Helen's memories</div>
+  <div class="houses-grid" id="helenGrid"></div>
+
+  <!-- Friends' + visitor houses -->
+  <div class="section-divider">Friends' memories</div>
+  <div class="houses-grid" id="friendsGrid"></div>
+
+  <script>
+    var HELEN_HOUSES = [
+      { id: 'tokyo',   image: 'images/house12.png' },
+      { id: 'israel',  image: 'images/house3.png'  },
+      { id: 'greece',  image: 'images/house2.png'  },
+      { id: 'london',  image: 'images/house6.png'  },
+      { id: 'russia',  image: 'images/house11.png' },
+      { id: 'bangkok', image: 'images/house13.png' }
+    ];
+
+    var FRIEND_HOUSES = [
+      { id: 'paris',   image: 'images/house5.png',  name: 'Joanna' },
+      { id: 'bali',    image: 'images/house8.png',  name: 'Haley'  },
+      { id: 'newyork', image: 'images/house14.png', name: 'Selina' }
+    ];
+
+    // ── Render Helen's houses ────────────────────────────────
+    var helenGrid = document.getElementById('helenGrid');
+    HELEN_HOUSES.forEach(function(h) {
+      helenGrid.appendChild(makeCard('house.html?id=' + h.id, h.image, 'Helen'));
+    });
+
+    // ── Render friends' houses ───────────────────────────────
+    var friendsGrid = document.getElementById('friendsGrid');
+    FRIEND_HOUSES.forEach(function(h) {
+      friendsGrid.appendChild(makeCard('house.html?id=' + h.id, h.image, h.name));
+    });
+
+    // ── Load user-submitted houses into the friends grid ────
+    try {
+      var entries = JSON.parse(localStorage.getItem('user_entries_index') || '[]');
+      entries.sort(function(a, b) { return (b.timestamp || '').localeCompare(a.timestamp || ''); });
+      entries.forEach(function(doc) {
+        var img  = doc.houseImage || 'images/house1.png';
+        var name = doc.name || 'Anonymous';
+        var href = doc.citySlug ? 'house.html?id=' + doc.citySlug : '#';
+        friendsGrid.appendChild(makeCard(href, img, name));
+      });
+    } catch(e) {}
+
+    // ── Card builder ─────────────────────────────────────────
+    function makeCard(href, imgSrc, authorName) {
+      var a = document.createElement('a');
+      a.className = 'house-card';
+      a.href = href;
+      a.innerHTML =
+        '<div class="house-card__img-wrap">' +
+          '<img class="house-card__img" src="' + escHtml(imgSrc) + '" alt="House" />' +
+        '</div>' +
+        '<div class="house-card__meta">' +
+          '<span class="house-card__name">' + escHtml(authorName) + '</span>' +
+          '<span class="house-card__label">Enter</span>' +
+        '</div>';
+      return a;
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
