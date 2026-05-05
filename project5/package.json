@@ -1,0 +1,12 @@
+{
+  "name": "traveljournal-static",
+  "version": "1.0.0",
+  "description": "Project 5: a travel journal website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
